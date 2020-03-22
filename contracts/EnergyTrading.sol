@@ -127,13 +127,10 @@ contract EnergyTrading {
         address[] memory _users,
         string memory _bid_time
     ) public IsCreator(msg.sender) {
-        // GET DEMAND-REQUEST LINES
         _clear_match_array();                       // Clear array for each match event
         _combine_match_array(_bid_time, _users);    // Combine bids for every user
-        _sort_array();                              // Sorting array
         _accumulate_array();                        // Accumulate bids
         _merge_array();                             // Merge bids
-        getArrayLog();
         bool matched = _find_intersection();        // Finding match intersection
         _find_shares(                               // Split bids by margin
             uint256(line_points[0][1]),
@@ -160,6 +157,7 @@ contract EnergyTrading {
         delete sell_volumes;
         delete sell_users;
 
+        // accumulated arrays
         delete ab_prices;
         delete ab_volumes;
         delete ab_users;
@@ -167,6 +165,7 @@ contract EnergyTrading {
         delete as_volumes;
         delete as_users;
 
+        // matching array
         delete mb_prices;
         delete mb_volumes;
         delete mb_users;
@@ -174,6 +173,7 @@ contract EnergyTrading {
         delete ms_volumes;
         delete ms_users;
 
+        // matched_result array
         delete matched_buy_users;
         delete matched_buy_volumes;
         delete matched_buy_ratios;
