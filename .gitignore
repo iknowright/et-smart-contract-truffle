@@ -4,4 +4,4 @@ node_modules
 package-lock.json
 .secret
 truffle-config.js
-ABI.json
+.env
