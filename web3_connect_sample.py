@@ -56,3 +56,15 @@ print(signed)
 # send transaction to testnet
 ropten_tx = web3.toHex(web3.eth.sendRawTransaction(signed.rawTransaction)))
 print(ropten_tx)
+
+
+# get receipt of transaction when block is ready
+receipt = web3.eth.waitForTransactionReceipt('0xd4d285e2bf9a28edf7f17b607ed4082815ff5140601f98a240aba6e79cc2feda')
+
+# let contract abi help parsing with tx receipt
+result = contract.events.bid_log().processReceipt(receipt)
+_user = result[0]['args']['_user']
+_bid_type = result[0]['args']['_bid_type']
+_bid_type = result[0]['args']['_bid_type']
+_volumn = result[0]['args']['_volumn']
+_price = result[0]['args']['_price']
