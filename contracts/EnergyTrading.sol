@@ -60,9 +60,8 @@ contract EnergyTrading {
 
     event get_log(uint256[] _volumn, uint256[] _price);
 
-    function getBid(address _user, string memory _bid_time, string memory _bid_type) public returns(uint256[] memory, uint256[] memory){
+    function getBid(address _user, string memory _bid_time, string memory _bid_type) public view returns(uint256[] memory, uint256[] memory){
         bid_struct memory the_bid = bids[_bid_time][_bid_type][_user];
-        emit get_log(the_bid.volumn, the_bid.price);
         return (the_bid.volumn, the_bid.price);
     }
 
@@ -70,6 +69,7 @@ contract EnergyTrading {
     //  match  //
     /////////////
 
+    // array of collected sells and buys
     uint256[] buy_prices;
     uint256[] buy_volumes;
     address[] buy_users;
@@ -77,6 +77,7 @@ contract EnergyTrading {
     uint256[] sell_volumes;
     address[] sell_users;
 
+    // array of accumulated sells and buys
     uint256[] ab_prices;
     uint256[] ab_volumes;
     address[] ab_users;
@@ -84,7 +85,7 @@ contract EnergyTrading {
     uint256[] as_volumes;
     address[] as_users;
 
-
+    // array of accumulated and ready-to-match sells and buys
     uint256[] mb_prices;
     uint256[] mb_volumes;
     address[] mb_users;
@@ -92,8 +93,7 @@ contract EnergyTrading {
     uint256[] ms_volumes;
     address[] ms_users;
 
-    int256[][] line_points;
-
+    // array of matched sells, buys and ratios
     address[] matched_buy_users;
     uint256[] matched_buy_volumes;
     uint256[] matched_buy_ratios;
@@ -101,28 +101,43 @@ contract EnergyTrading {
     uint256[] matched_sell_volumes;
     uint256[] matched_sell_ratios;
 
+    // points of intersection lines
+    // intersection occurs when two lines intersect which will consist of four points
+    // they are line1point1, line1point2, line2point1, and line2point1
+    // in short l1p1, l1p2, l2p1, l2p2
+    int256[][] line_points;
+
+    // event that logs the sells and buys array
     event array_log(uint256[] _volume, uint256[] _price, address[] _users);
-    event line_pts(
-        int256[2] l1p1,
-        int256[2] l1p2,
-        int256[2] l2p1,
-        int256[2] l2p2
-    );
-    event match_result(
-        bool,
-        uint256,
-        uint256,
-        address[],
-        uint256[],
-        address[],
-        uint256[]
+
+    // event that logs matched result
+    event matched_log(
+        bool _matched,
+        uint256 _matched_volume,
+        uint256 _matched_price,
+        address[] _matched_buy_users,
+        uint256[] _matched_buy_ratios,
+        address[] _matched_sell_users,
+        uint256[] _matched_sell_ratios
     );
 
-    function getArrayLog() public {
-        emit array_log(buy_volumes, buy_prices, buy_users);
-        emit array_log(sell_volumes, sell_prices, sell_users);
+    // matched struct to store matched data
+    struct matched_struct {
+        bool _matched;
+        uint256 _matched_volume;
+        uint256 _matched_price;
+        address[] _matched_buy_users;
+        uint256[] _matched_buy_ratios;
+        address[] _matched_sell_users;
+        uint256[] _matched_sell_ratios;
     }
 
+    // mapping for matched result (time -> matched_struct)
+    mapping (string => matched_struct) matched_result;
+
+    //////////////////
+    //  match body  //
+    //////////////////
     function match_bids(
         address[] memory _users,
         string memory _bid_time
@@ -137,17 +152,56 @@ contract EnergyTrading {
             uint256(line_points[2][1])
         );
 
-        emit match_result(
-            matched,
-            uint256(line_points[2][0]),
-            uint256(line_points[2][1]),
-            matched_buy_users,
-            matched_buy_ratios,
-            matched_sell_users,
-            matched_sell_ratios
+        // store matched result
+        matched_result[_bid_time] = matched_struct({
+            _matched: matched,
+            _matched_volume: uint256(line_points[2][0]),
+            _matched_price: uint256(line_points[2][1]),
+            _matched_buy_users: matched_buy_users,
+            _matched_buy_ratios: matched_buy_ratios,
+            _matched_sell_users: matched_sell_users,
+            _matched_sell_ratios: matched_sell_ratios
+        });
+
+        // emit matched result
+        emit matched_log(
+            matched,                    // match success?
+            uint256(line_points[2][0]), // matched volume
+            uint256(line_points[2][1]), // matched price
+            matched_buy_users,          // buyers' addresses
+            matched_buy_ratios,         // buyers' bid ratios
+            matched_sell_users,         // sellers' addresses
+            matched_sell_ratios         // sellers' bid ratios
         );
     }
 
+    // get matchresult
+    function getMatchResult(string memory _bid_time) public view returns(
+        bool,
+        uint256,
+        uint256,
+        address[] memory,
+        uint256[] memory,
+        address[] memory,
+        uint256[] memory
+    ){
+        matched_struct memory the_matchresult = matched_result[_bid_time];
+        return (
+            the_matchresult._matched,
+            the_matchresult._matched_volume,
+            the_matchresult._matched_price,
+            the_matchresult._matched_buy_users,
+            the_matchresult._matched_buy_ratios,
+            the_matchresult._matched_sell_users,
+            the_matchresult._matched_sell_ratios
+        );
+    }
+
+    //////////////////////////////
+    //  match helper functions  //
+    //////////////////////////////
+
+    // function that clear all the state variables (dynamic array)
     function _clear_match_array() private {
         // Reset dynamic arrays for match bids
         delete buy_prices;
@@ -172,7 +226,7 @@ contract EnergyTrading {
         delete ms_prices;
         delete ms_volumes;
         delete ms_users;
-
+        
         // matched_result array
         delete matched_buy_users;
         delete matched_buy_volumes;
@@ -184,6 +238,7 @@ contract EnergyTrading {
         delete line_points;
     }
 
+    // combine match array from gathering all the user's bids
     function _combine_match_array(
         string memory _bid_time, address[] memory _users
     ) private {
@@ -218,8 +273,9 @@ contract EnergyTrading {
         }
     }
 
-    // insertion sort
+    // resorting all bids among users by using insertion sort algorithm
     function _sort_array() private {
+        // buy
         uint256 j;
         uint256 b_price_key;
         uint256 b_volume_key;
@@ -242,6 +298,7 @@ contract EnergyTrading {
                     j = j - 1;
                 }
             }
+            // avoid uint 0 - 1
             if(flag) {
                 buy_prices[0] = b_price_key;
                 buy_volumes[0] = b_volume_key;
@@ -253,6 +310,7 @@ contract EnergyTrading {
             }
         }
 
+        // sell
         uint256 s_price_key;
         uint256 s_volume_key;
         address s_user_key;
@@ -274,6 +332,7 @@ contract EnergyTrading {
                     j = j - 1;
                 }
             }
+            // avoid uint 0 - 1
             if(flag) {
                 sell_prices[0] = s_price_key;
                 sell_volumes[0] = s_volume_key;
@@ -286,6 +345,8 @@ contract EnergyTrading {
         }
     }
 
+    // function to accumulate bids
+    // after sorting, accumulate bids are required
     function _accumulate_array() private {
         uint256 curr_volume = 0;
         for (uint256 i = 0; i < buy_volumes.length; i++) {
@@ -310,6 +371,10 @@ contract EnergyTrading {
         }
     }
 
+    // apply 'OR' operation between buy and sell points,
+    // make sure that both lines have same x-axis value
+    // so we can apply 'find the intersection' algorithm
+    // on the array.
     function _merge_array() private {
         uint256 i = 0;
         uint256 j = 0;
@@ -411,10 +476,18 @@ contract EnergyTrading {
         }
     }
 
+
+    /////////////////////////////
+    //  line helper functions  //
+    /////////////////////////////
+
+    // determinant function
     function _det(int256[2] memory a, int256[2] memory b) private pure returns(int256) {
         return a[0] * b[1] - a[1] * b[0];
     }
 
+    // given two lines (4 points), return whether
+    // these two lines gives an intersection (T/F).
     function _line_intersection(
         int256[2] memory l1p1,
         int256[2] memory l1p2,
@@ -444,6 +517,9 @@ contract EnergyTrading {
         }
     }
 
+    // buy and sell bids are two huge lines that formed
+    // by line segments, so go through the segments
+    // can determine where and which two segments intersect.
     function _find_intersection() private returns(bool) {
         bool intersection = false;
         for (uint256 i = 0; i < mb_volumes.length - 1; i++) {
@@ -454,12 +530,6 @@ contract EnergyTrading {
                     [int256(ms_volumes[j]), int256(ms_prices[j])],
                     [int256(ms_volumes[j+1]), int256(ms_prices[j+1])]
                 )) {
-                    emit line_pts(
-                        [int256(mb_volumes[i]), int256(mb_prices[i])],
-                        [int256(mb_volumes[i+1]), int256(mb_prices[i+1])],
-                        [int256(ms_volumes[j]), int256(ms_prices[j])],
-                        [int256(ms_volumes[j+1]), int256(ms_prices[j+1])]
-                    );
                     line_points.push([int256(mb_volumes[i]), int256(mb_prices[i])]);
                     line_points.push([int256(mb_volumes[i+1]), int256(mb_prices[i+1])]);
                     line_points.push([int256(ms_volumes[j]), int256(ms_prices[j])]);
@@ -471,6 +541,8 @@ contract EnergyTrading {
         return intersection;
     }
 
+    // once the matched price and volume are set,
+    // split the ratio for the matched users.
     function _find_shares(uint256 _buy_target_price, uint256 _sell_target_price) private {
         uint256 total_volume = 0;
         for (uint256 i = 0; i < buy_volumes.length; i++) {
