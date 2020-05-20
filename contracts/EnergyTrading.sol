@@ -226,7 +226,7 @@ contract EnergyTrading {
         delete ms_prices;
         delete ms_volumes;
         delete ms_users;
-        
+
         // matched_result array
         delete matched_buy_users;
         delete matched_buy_volumes;
@@ -567,4 +567,18 @@ contract EnergyTrading {
             matched_sell_ratios.push(matched_sell_volumes[i] * 100 / total_volume);
         }
     }
+
+    //////////////////
+    //  settlement  //
+    //////////////////
+
+    // function settlement(
+    //     string memory _bid_time,
+    //     address[] memory _buy_users,
+    //     uint256[] memory _buy_uses,
+    //     address[] memory _sell_users,
+    //     uint256[] memory _sell_gives
+    // ) public IsCreator(msg.sender) {
+    //     matched_struct memory the_matchresult = matched_result[_bid_time];
+    // }
 }
