@@ -36,6 +36,7 @@ contract EnergyTrading {
     /////////////
     //   bid   //
     /////////////
+
     struct bid_struct {
         uint256[] volumn;
         uint256[] price;
@@ -165,7 +166,7 @@ contract EnergyTrading {
 
         // emit matched result
         emit matched_log(
-            matched,                    // match success?
+            matched,                    // match success
             uint256(line_points[2][0]), // matched volume
             uint256(line_points[2][1]), // matched price
             matched_buy_users,          // buyers' addresses
@@ -572,13 +573,19 @@ contract EnergyTrading {
     //  settlement  //
     //////////////////
 
-    // function settlement(
-    //     string memory _bid_time,
-    //     address[] memory _buy_users,
-    //     uint256[] memory _buy_uses,
-    //     address[] memory _sell_users,
-    //     uint256[] memory _sell_gives
-    // ) public IsCreator(msg.sender) {
-    //     matched_struct memory the_matchresult = matched_result[_bid_time];
-    // }
+    event settlement_log(address _seller, address _buyer, uint256 _price, uint256 _volume, uint256 _generated_vol, uint256 _amount);
+
+    function settlement(
+        address _seller,
+        address _buyer,
+        uint256 _price,
+        uint256 _volume,
+        uint256 _generated_vol,
+        uint256 _amount
+    ) public IsCreator(msg.sender) {
+        TransferFrom(_buyer, _seller, _amount);
+        emit settlement_log(
+           _seller, _buyer, _price, _volume, _generated_vol, _amount
+        );
+    }
 }

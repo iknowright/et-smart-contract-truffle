@@ -1,6 +1,7 @@
+build
+node_modules
 helper
 helper/*
-node_modules
 package-lock.json
 .secret
 truffle-config.js
