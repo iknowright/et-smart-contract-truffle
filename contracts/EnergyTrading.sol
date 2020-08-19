@@ -38,32 +38,32 @@ contract EnergyTrading {
     /////////////
 
     struct bid_struct {
-        uint256[] volumn;
+        uint256[] volume;
         uint256[] price;
     }
     // time => type(buy/sell) => user_address => bid_struct
     mapping (string => mapping (string => mapping (address => bid_struct))) bids;
 
-    event bid_log(address _user, string _bid_time, string _bid_type, uint256[] _volumn, uint256[] _price);
+    event bid_log(address _user, string _bid_time, string _bid_type, uint256[] _volume, uint256[] _price);
 
     function bid(
         address _user,
         string memory _bid_time,
         string memory _bid_type,
-        uint256[] memory _volumn,
+        uint256[] memory _volume,
         uint256[] memory _price
     ) public IsCreator(msg.sender) {
         bids[_bid_time][_bid_type][_user] = bid_struct({
-            volumn: _volumn, price: _price
+            volume: _volume, price: _price
         });
-        emit bid_log(_user, _bid_time, _bid_type, _volumn, _price);
+        emit bid_log(_user, _bid_time, _bid_type, _volume, _price);
     }
 
-    event get_log(uint256[] _volumn, uint256[] _price);
+    event get_log(uint256[] _volume, uint256[] _price);
 
     function getBid(address _user, string memory _bid_time, string memory _bid_type) public view returns(uint256[] memory, uint256[] memory){
         bid_struct memory the_bid = bids[_bid_time][_bid_type][_user];
-        return (the_bid.volumn, the_bid.price);
+        return (the_bid.volume, the_bid.price);
     }
 
     /////////////
@@ -249,7 +249,7 @@ contract EnergyTrading {
             uint256[] memory volumes;
             bid_struct memory user_buy_bids = bids[_bid_time]["buy"][_users[i]];
             prices = user_buy_bids.price;
-            volumes = user_buy_bids.volumn;
+            volumes = user_buy_bids.volume;
 
             for(uint256 j = 0; j < prices.length; j++) {
                 buy_prices.push(prices[j]);
@@ -264,7 +264,7 @@ contract EnergyTrading {
             uint256[] memory volumes;
             bid_struct memory user_sell_bids = bids[_bid_time]["sell"][_users[i]];
             prices = user_sell_bids.price;
-            volumes = user_sell_bids.volumn;
+            volumes = user_sell_bids.volume;
 
             for(uint256 j = 0; j < prices.length; j++) {
                 sell_prices.push(prices[j]);
