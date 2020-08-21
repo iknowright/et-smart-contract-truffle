@@ -6,3 +6,5 @@ package-lock.json
 .secret
 truffle-config.js
 .env
+.vscode
+bin
