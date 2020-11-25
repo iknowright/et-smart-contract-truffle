@@ -23,7 +23,7 @@ contract("EnergyTrading", async accounts => {
         );
         assert.equal(
             result.logs[0].args[3].toString(),
-            accounts[0],
+            accounts[1],
             "Matched buy users is not as expected."
         );
         assert.equal(
@@ -62,11 +62,11 @@ contract("EnergyTrading", async accounts => {
             '40',
             "Matched price should be 40."
         );
-        // assert.equal(
-        //     result.logs[0].args[3].toString(),
-        //     accounts[0],
-        //     "Matched buy users is not as expected."
-        // );
+        assert.equal(
+            result.logs[0].args[3].toString(),
+            accounts[0],
+            "Matched buy users is not as expected."
+        );
         assert.equal(
             result.logs[0].args[4].toString(),
             '100',

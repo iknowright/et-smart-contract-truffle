@@ -1,5 +1,5 @@
-const EnergyTrading = artifacts.require("EnergyTrading");
+const EnergyTradingLite = artifacts.require("EnergyTradingLite");
 
 module.exports = function(deployer) {
-  deployer.deploy(EnergyTrading);
+  deployer.deploy(EnergyTradingLite);
 };
